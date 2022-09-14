@@ -85,8 +85,8 @@ Cart.belongsTo(Product, {foreignKey: "product_id"})
 Product_unit.hasMany(Product_stock, {foreignKey: "product_unit_id"})
 Product_stock.belongsTo(Product_unit, {foreignKey: "product_unit_id"})
 
-Order.hasMany(Cart, {foreignKey: "order_id"})
-Cart.belongsTo(Order, {foreignKey: "order_id"})
+Cart.hasOne(Order, {foreignKey: "cart_id"})
+Order.belongsTo(Cart, {foreignKey: "cart_id"})
 
 //M : M
 Product.hasMany(Product_categories, {foreignKey: "product_id"})

@@ -1,27 +1,48 @@
+const e = require('express')
+const sequelize = require('sequelize')
+const { Op } = require('sequelize')
 const { Product, Product_categories, Product_description, Product_img, Product_stock, Product_unit, Categories, } = require('../library/sequelize')
 const productController = {
     getAllProduct: async (req, res) => {
+        const {page, limit , search, category, sort, orderBy, min, max } =  req.query
+        console.log(req.query)
         try {
             const allProduct = await Product.findAll({
-                limit: 20,
-                offset: 0,
+                offset: (page - 1) * limit,
+                limit: limit ? parseInt(limit) : undefined,
+                where :  search ? {
+                    product_name : {[Op.substring] : search }
+                } : {},
                 include: [
-                    Product_description, 
-                    
-                    Product_img, 
-
+                    Product_description,
+                    Product_img,
                     {
                         model : Product_stock,
-                        include: [{model: Product_unit}]
+                        where : min&&max ? {
+                            is_converted: false,
+                            sell_price : {[Op.between] : [+min, +max]}
+                        } : {is_converted: false},
+                        include: [
+                            Product_unit
+                        ],
                     },
-                    
-                    {
-                        model: Product_categories,
-                        include: [{model: Categories}]
+                    { model: Product_categories,
+                        include: [
+                            { model: Categories,
+                                where: category ? {
+                                    category : `${category}`
+                                } : {},
+                            }
+                        ],
                     }
                 ],
-                order: [['createdAt', 'DESC']]
+                order: orderBy ?
+                    orderBy == 'product_name' && sort ? [[orderBy, sort]]
+                    : (orderBy == 'sell_price' && sort ? [[Product_stock,  orderBy, sort]] : null )
+                : [['createdAt', 'DESC']]
             })
+
+            // a? a++ : (b? b++ : (c? c++ : x++)) cara nasted if pake (? dan :)
 
             return res.status(200).json({
                 message: "All product has fetched",
@@ -74,53 +95,21 @@ const productController = {
         }
     },
 
-    getProdutByCategories: async (req, res) => {
+    getAllCategories: async (req, res) => {
         try {
-            const { categories_id } = req.query
-
-            const findProductInCategories = await Product_categories.findAll(
-                {   
-                    where: {
-                        categories_id, 
-                    },
-                }
-            )
-
-            console.log(findProductInCategories)
-
-            const findAllProduct = await Product.findAll({
-                where: {
-                    id: findProductInCategories[0].dataValues.product_id,
-                },
-                include: [
-                    Product_description, 
-                    
-                    Product_img, 
-
-                    {
-                        model : Product_stock,
-                        include: [{model: Product_unit}]
-                    },
-                    
-                    {
-                        model: Product_categories,
-                        include: [{model: Categories}]
-                    }
-                ],
+            const result = await Categories.findAll({})
+            
+            return res.status(200).json({
+                message: `fatched all category`,
+                result: result
             })
-
-            res.status(200).json({
-                message: 'product has been fetched by categories',
-                result: findAllProduct
-            })
-
         } catch (error) {
-            console.log(error);
-            res.status(500).json({
-                message: 'error',
+            console.log(error)
+            return res.status(500).json({
+                message: error.toString()
             })
         }
-    }
+    },
 }
 
 module.exports = productController
