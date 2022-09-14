@@ -1,77 +1,122 @@
 /* eslint-disable react/no-unescaped-entities */
-import { Flex, Icon, Menu, MenuButton, MenuItem, MenuList, Text, Button, AccordionPanel, AccordionIcon, Box, AccordionButton, AccordionItem, Accordion, Stack, Checkbox, RangeSlider, RangeSliderTrack, RangeSliderFilledTrack, RangeSliderThumb, Input, VStack, Grid, GridItem, Center, Container, HStack, Link } from "@chakra-ui/react"
+import { Flex, Icon, Menu, MenuButton, MenuItem, MenuList, Text, Button, AccordionPanel, AccordionIcon, Box, AccordionButton, AccordionItem, Accordion, Stack, Checkbox, RangeSlider, RangeSliderTrack, RangeSliderFilledTrack, RangeSliderThumb, Input, VStack, Grid, GridItem, Center, Container, HStack, Link, Select } from "@chakra-ui/react"
 import { ChevronDownIcon } from "@chakra-ui/icons"
 import { useEffect, useState } from "react"
 import obat_1 from "../../public/gambar_obat/obat_1.png"
 import Image from "next/image"
 import { axiosInstance } from "../../library/api"
+import { useRouter } from "next/router"
+import ProductCard from "../Card/productCard"
+import { useDispatch, useSelector } from "react-redux"
+import render_types from "../../redux/reducers/types/render"
 
-const ProductStore = () => {
+const ProductStore = (props) => {
     const [sliderValue, setSliderValue] = useState(0)
     const [ allProduct, setAllProduct ] = useState([])
+    const [ allCategories, setAllCategories ] = useState([])
+    const [ recentCategory, setRecentCategory ] = useState("")
+    const autoRender = useSelector((state) => {return state.render})
 
+    const dispatch = useDispatch()
+    const router = useRouter()
 
-    const fetchDataProduct = async () => {
+    // ----------------  fetching data  --------------------//
+    // fetching all categories // 
+    const fetchDataCategories = async () => {
         try {
-            await axiosInstance.get('/product').then((res) => {
+            await axiosInstance.get('/product/categories').then((res) => {
                 const data = res.data.result
-                setAllProduct(data)
+                setAllCategories(data)
             })
-
         } catch (error) {
             console.log(error)
         }
     }
 
-    console.log(allProduct);
+    // fetching all product
+    const fetchDataProduct = async (filter) => {
+        let order = ""
+        let sort = ""
+        if (filter == 'name_asc') {
+            order = 'product_name';
+            sort = "ASC"
+        } else if (filter == 'name_desc') {
+            order = 'product_name';
+            sort = "DESC"
+        } else if (filter == 'price_desc') {
+            order = 'sell_price';
+            sort = "DESC"
+        } else if (filter == 'price_asc') {
+            order = 'sell_price';
+            sort = "ASC"
+        } else {
+            order = '';
+            sort = ""
+        }
 
-    const productCard = () => {
-        return allProduct?.map((val) => {
+        try {
+            await axiosInstance.get(`/product/`, {params: {
+                category: recentCategory,
+                limit : 16,
+                page: 1,
+                sort : sort,
+                orderBy : order,
+                min: (sliderValue[0] ? sliderValue[0]*1000 : 0),
+                max: (sliderValue[1] ? sliderValue[1]*1000 : 200*1000 ),
+                search: props.search
+            }}).then((res) => {
+                const data = res.data.result
+                setAllProduct(data)
+            })
+        } catch (error) {
+            console.log(error)
+        }
+    }
+    // ------xxx-------  fetching data  ----------xxx--------//
+    
+    // ----------------  rendering data  --------------------//
+    const categoriesList = () => {
+        return allCategories?.map((val) => {
             return (
                 <>
-                <GridItem>
-                    <Link w='full' h='full' borderRadius='.5em' className='product-card' cursor='pointer' _hover={{textDecoration: 'none'}} href={`/product/${val.id}`}>
-                    <VStack>
-                        <Image
-                            alt=''
-                            src={`http://${val.product_imgs[0].img_url}`}
-                            width='150px'
-                            height='150px'
-                        />
-
-                        <Stack align='center' justify='center' w='full' spacing={2} textAlign='center'>
-                            <Text fontWeight='bold' fontSize={14}>{val.product_name}</Text>
-                            <Text fontSize={12} color='grey' border='1px' borderColor='grey' p={1} borderRadius={15}>{val.product_categories[0].category.category}</Text>
-                            <Text fontWeight='bold'>{Number(val.product_stocks[0].sell_price).toLocaleString('id', { style: 'currency', currency: 'IDR' })}</Text>
-                        </Stack>
-
-                        <Button 
-                            w='full' 
-                            borderBottomRadius={10} 
-                            borderTopRadius={0} 
-                            bgColor='fireBrick' 
-                            color='white'
-                            _hover={{
-                                backgroundColor: "#e3eeee",
-                                color: "fireBrick"
-                            }}
-                        >
-                            Add to Cart
-                        </Button>
-                    </VStack>
-                </Link>
-                </GridItem>
+                    <Button size='sm' onClick={() => {
+                        recentCategory == val.category ? setRecentCategory("") :
+                        setRecentCategory(val.category)
+                    }}
+                    >
+                       <Text align='left' w='70%'>{val.category}</Text>
+                    </Button>
                 </>
             )
         })
     }
 
+    const productCard = () => {
+        return allProduct?.map((val, index) => {
+            return (
+                <>
+                    <ProductCard key={index}
+                        product_id = {val.id}
+                        product_image = {`http://${val.product_imgs[0].img_url}`}
+                        product_name = {val.product_name}
+                        product_category = {val.product_categories[0]?.category.category}
+                        product_price = {Number(val.product_stocks[0].sell_price)}
+                    />
+                </>
+            )
+        })
+    }
+
+    // ------xxx-------  rendering data  ----------xxx--------//
     useEffect(() => {
         fetchDataProduct()
+        fetchDataCategories()
+    }, [recentCategory ,sliderValue, props.search])
 
-    }, [])
-
-
+    
+    // useEffect(()=> {
+    // alert("test")
+    // },[sliderValue])
     return (
         <Flex
             flexDir='row'
@@ -85,16 +130,15 @@ const ProductStore = () => {
             <Flex
                 flexDir='column'
                 alignItems='center'
-                w='25em'
-                bgColor="black"
-                color="white"
+                px={5}
+                w='20em'
             >
                 <Flex 
                     flexDir='column'
                     justifyContent='space-between'
                     h='full'
-                    w="20em"
-                    px={10}
+                    w='full'
+                    // px={10}
                     marginY={12}
                 >
                     {/* menu*/}
@@ -103,7 +147,7 @@ const ProductStore = () => {
                         spacing={5}
                     >
                         {/* menu list */}
-                        <Accordion defaultIndex={[0]} allowMultiple boxShadow='dark-lg'>
+                        <Accordion defaultIndex={[0]} allowMultiple>
                             <AccordionItem>
                                 <AccordionButton bgColor='#b41974' color='white' _hover={{bgColor: 'white', color: 'black'}}>
                                     <Box flex='1' textAlign='left'>
@@ -114,15 +158,13 @@ const ProductStore = () => {
                                 
                                 <AccordionPanel pb={4}> 
                                     <Stack w='100%' spacing={3} className='link'>
-                                        <Text cursor='pointer'>Obat Batuk</Text>
-                                        <Text cursor='pointer'>Obat Batuk</Text>
-                                        <Text cursor='pointer'>Obat Batuk</Text>
+                                        {categoriesList()}
                                     </Stack>
                                 </AccordionPanel>
                             </AccordionItem>
                         </Accordion>
 
-                        <Accordion defaultIndex={[0]} allowMultiple boxShadow='dark-lg'>
+                        <Accordion defaultIndex={[0]} allowMultiple>
                             <AccordionItem>
                                 <AccordionButton bgColor='#b41974' color='white' _hover={{bgColor: 'white', color: 'black'}}>
                                     <Box flex='1' textAlign='left'>
@@ -133,39 +175,45 @@ const ProductStore = () => {
                                 
                                 <AccordionPanel pb={4}> 
                                     <Stack w='100%' spacing={3}>
-                                    <RangeSlider 
-                                        defaultValue={[0, 200]} 
-                                        min={0} 
-                                        max={200} 
-                                        step={50}
-                                        onChangeEnd={(val) => setSliderValue(val)}
-                                        w='87%'
-                                        alignSelf='center'
-                                        mt={5}
-                                    >                                        
-                                        <RangeSliderTrack>
-                                            <RangeSliderFilledTrack/>
-                                        </RangeSliderTrack>
+                                        <RangeSlider 
+                                            defaultValue={[0, 200]} 
+                                            min={0} 
+                                            max={200} 
+                                            step={50}
+                                            onChangeEnd={(val) => setSliderValue(val)}
+                                            w='87%'
+                                            alignSelf='center'
+                                            mt={5}
+                                        >                                        
+                                            <RangeSliderTrack>
+                                                <RangeSliderFilledTrack/>
+                                            </RangeSliderTrack>
 
-                                        <RangeSliderThumb index={0}/>
-                                        <RangeSliderThumb index={1}/>
-                                    </RangeSlider>
+                                            <RangeSliderThumb bgColor='#b41974' index={0}/>
+                                            <RangeSliderThumb bgColor='#b41974' index={1}/>
+                                        </RangeSlider>
 
-                                    <Flex w='105%' textAlign='center'>
-                                        <Text flex={1} pr={1}>0</Text>
-                                        <Text flex={1}>50</Text>
-                                        <Text flex={1}>100</Text>
-                                        <Text flex={1}>150</Text>
-                                        <Text flex={1} pl={1}>200</Text>
-                                    </Flex>
+                                        <Flex w='105%' textAlign='center'>
+                                            <Text flex={1} pr={1}>0</Text>
+                                            <Text flex={1}>50</Text>
+                                            <Text flex={1}>100</Text>
+                                            <Text flex={1}>150</Text>
+                                            <Text flex={1} pl={1}>200</Text>
+                                        </Flex>
+
                                         <Input type={'number'} placeholder='min' value={sliderValue[0]}/>
                                         <Input type={'number'} placeholder='max' value={sliderValue[1]}/>
+
+                                        <HStack justify='center' align='center' spacing={5}>
+                                            <Button size='sm' >Reset</Button>
+                                            <Button size='sm' >Save</Button>
+                                        </HStack>
                                     </Stack>
                                 </AccordionPanel>
                             </AccordionItem>
                         </Accordion>
 
-                        <Accordion defaultIndex={[0]} w='100%' allowMultiple boxShadow='dark-lg'>
+                        <Accordion defaultIndex={[0]} w='100%' allowMultiple>
                             <AccordionItem>
                                 <AccordionButton bgColor='#b41974' color='white' _hover={{bgColor: 'white', color: 'black'}}>
                                     <Box flex='1' textAlign='left'>
@@ -189,28 +237,25 @@ const ProductStore = () => {
             </Flex>
 
             {/* Content */}
-            <VStack minW='70%' p={3} ml={3}>
+            <VStack minW='75%' p={3} ml={3}>
                 <Flex w='full' flexDir='column'>
-                    <Text fontWeight='bold' fontSize={17}>Category Product</Text>
+                    <Text fontWeight='bold' fontSize={17}>{recentCategory ? `${recentCategory}'s Category` : "All Product"}</Text>
                     <Box w='full' h={1} borderBottom="2px" borderColor='#b41974' mt={2} boxShadow='dark-lg'></Box>
                 </Flex>
 
                 <Flex w='full' justify='space-between' align='center' p={2}>
                     <Box>
-                        <Text>Total Product Category</Text>
+                        <Text>{allProduct.length} {recentCategory ? `Products in ${recentCategory}`: "Total Product"}</Text>
                     </Box>
 
                     <Box display='flex'>
-                        <Text alignSelf='center' mr={1}>Urutkan</Text>
-                        <Menu>
-                            <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-                                Penjualan terbanyak
-                            </MenuButton>
-                            <MenuList>
-                                <MenuItem>Harg'a Termurah</MenuItem>
-                                <MenuItem>Harga Termahal</MenuItem>
-                            </MenuList>
-                        </Menu>
+                        <Select onChange={(event) => {fetchDataProduct(event.target.value )}}>
+                            <option value=''>Urutkan</option>
+                            <option value='name_asc'>Name Ascending</option>
+                            <option value='name_desc'>Name Descending</option>
+                            <option value='price_desc'>Highest Price</option>
+                            <option value='price_asc'>Lowest Price</option>
+                        </Select>
                     </Box>
                 </Flex>
 

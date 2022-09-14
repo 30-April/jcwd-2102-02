@@ -15,6 +15,8 @@ const ModalAddress = () => {
     const [ dataProvince, setDataProvince ] = useState([])
     const [ provinceName, setProvinceName ] = useState()
     const [ cityName, setCityName ] = useState()
+    console.log(provinceName)
+    console.log(cityName)
 
     const dispatch = useDispatch()
     const toast = useToast()
@@ -23,7 +25,7 @@ const ModalAddress = () => {
     
     const render_city_name = async () => {
         try {
-            await axios.get(`https://api.rajaongkir.com/starter/city?province=${formik.values.province}` , {headers: {"key" : "d2bbf841ca82c43bf952e17f16213b91 "}}).then ((val) => {
+            await axios.get(`https://api.rajaongkir.com/starter/city?province=${formik.values.province}` , {headers: {"key" : "d2bbf841ca82c43bf952e17f16213b91"}}).then ((val) => {
                 setDataCity([...val.data.rajaongkir.results])
             }) 
 

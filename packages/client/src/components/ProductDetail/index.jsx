@@ -30,7 +30,7 @@ const ProductDetail = () => {
                 const data = res.data.result
                 console.log(data)
                 setProduct(data)
-                setDesct(data.product_description)
+                setDesc(data.product_description)
             })
 
         } catch (error) {
@@ -41,7 +41,7 @@ const ProductDetail = () => {
     useEffect(() => {
         fetchDataProduct()
 
-    }, [])
+    }, [router?.isReady])
 
     return (
         <Flex
@@ -58,7 +58,7 @@ const ProductDetail = () => {
                 <VStack flex={1} p={5}>
                     <Image
                         alt='gambar product'
-                        src={`http://${product.product_imgs[0].img_url}`}
+                        src={product ?  `http://${product?.product_imgs[0]?.img_url}` : ""}
                         width={200}
                         height={200}
                     />
@@ -69,12 +69,12 @@ const ProductDetail = () => {
                 {/* Box harga dan nama product */}
                 <VStack w='full' align='start' spacing={3}>
                     <VStack spacing={0} w='80%'h='full'>
-                        <Text w='full' fontWeight='bold' fontSize={14}>{product.product_categories[0].category.category}</Text>
-                        <Text w='full' fontSize={22}>{product.product_name}</Text>
+                        <Text w='full' fontWeight='bold' fontSize={14}>{product?.product_categories[0].category.category}</Text>
+                        <Text w='full' fontSize={22}>{product?.product_name}</Text>
                         
                         <HStack w='full'>
-                            <Text fontWeight='bold' fontSize={24}>{Number(product.product_stocks[0].sell_price).toLocaleString('id', { style: 'currency', currency: 'IDR' })}</Text>                        
-                            <Text fontSize={15}>/ {product.product_stocks[0].product_unit.unit_name} </Text>
+                            <Text fontWeight='bold' fontSize={24}>{Number(product?.product_stocks[0].sell_price).toLocaleString('id', { style: 'currency', currency: 'IDR' })}</Text>                        
+                            <Text fontSize={15}>/ {product?.product_stocks[0].product_unit.unit_name} </Text>
                         </HStack>
                     </VStack>
 
@@ -88,7 +88,7 @@ const ProductDetail = () => {
                         <Button onClick={() => {setCounter(counter + 1)}} size='sm'>
                             <Icon as={HiPlus}/>
                         </Button>
-                        <Text w='full' fontSize={12}>Stock tersisa {product.product_stocks[0].stock}</Text>
+                        <Text w='full' fontSize={12}>Stock tersisa {product?.product_stocks[0].stock}</Text>
                     </HStack>
 
                     <HStack>
@@ -110,32 +110,32 @@ const ProductDetail = () => {
                     <VStack w='full' spacing={5}>
                         <HStack w='full' align='start'>
                             <Text flex={1} fontWeight='bold'>Indikasi / Kegunaan</Text>
-                            <Text flex={1}>{desc.kegunaan}</Text>
+                            <Text flex={1}>{desc?.kegunaan}</Text>
                         </HStack>
 
                         <HStack w='full' align='start'>
                             <Text flex={1} fontWeight='bold'>Kemasan</Text>
-                            <Text flex={1}>{desc.kemasan}</Text>
+                            <Text flex={1}>{desc?.kemasan}</Text>
                         </HStack> 
 
                         <HStack w='full' align='start'>
                             <Text flex={1} fontWeight='bold'>Golongan</Text>
-                            <Text flex={1}>{desc.gologan}</Text>
+                            <Text flex={1}>{desc?.golongan}</Text>
                         </HStack> 
 
                         <HStack w='full' align='start'>
                             <Text flex={1} fontWeight='bold'>Butuh resep</Text>
-                            <Text flex={1}>{desc.need_prescription}</Text>
+                            <Text flex={1}>{String(desc?.need_prescription)}</Text>
                         </HStack> 
 
                         <HStack w='full' align='start'>
                             <Text flex={1} fontWeight='bold'>Cara penyimpanan</Text>
-                            <Text flex={1}>{desc.cara_penyimpanan}</Text>
+                            <Text flex={1}>{desc?.cara_penyimpanan}</Text>
                         </HStack> 
 
                         <HStack w='full' align='start'>
                             <Text flex={1} fontWeight='bold'>Nomor Ijin Edar (NIE)</Text>
-                            <Text flex={1}>{desc.nomor_ijin_edar}</Text>
+                            <Text flex={1}>{desc?.nomor_ijin_edar}</Text>
                         </HStack>   
                     </VStack>
                 </VStack>
